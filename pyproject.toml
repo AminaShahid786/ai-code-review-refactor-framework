@@ -11,11 +11,100 @@ authors = [
     { name = "Shafia Zahid" },
 ]
 
-# NOTE: This file intentionally declares no dependencies yet.
-# Per the project's Implementation Roadmap, dependency management, tooling
-# configuration (Ruff/Black/Mypy/pytest), and the dev-environment setup are
-# introduced in Phase 2 — Development Environment & Tooling.
+# NOTE: This file declares only development tooling dependencies for now
+# (Phase 2 — Development Environment & Tooling). Runtime application
+# dependencies (FastAPI, SQLAlchemy, agent-specific libraries, etc.) are
+# introduced incrementally starting with Phase 4, each pinned as the
+# corresponding component is implemented — per the Implementation Roadmap,
+# no phase should pull in dependencies it does not yet use.
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "ruff==0.6.9",
+    "black==24.10.0",
+    "mypy==1.13.0",
+    "pre-commit==4.0.1",
+    "pytest==8.3.3",
+    "pytest-asyncio==0.24.0",
+]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+# ---------------------------------------------------------------------------
+# Tool configuration (Phase 2)
+# ---------------------------------------------------------------------------
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["backend", "ml", "validation", "utils", "scripts", "testing"]
+exclude = [
+    ".venv",
+    "venv",
+    "node_modules",
+    "frontend",
+    "logs",
+    "**/*.gitkeep",
+]
+
+[tool.ruff.lint]
+# Sensible, non-exhaustive baseline for Phase 2. Individual agent phases may
+# extend this selection as real code is added, but must not weaken it.
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "W",   # pycodestyle warnings
+    "I",   # isort (import ordering)
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C90", # mccabe complexity
+    "S",   # flake8-bandit (basic security lint; full Bandit run is a separate Static Analysis Agent tool)
+]
+ignore = [
+    "S101", # allow `assert` in test files
+]
+
+[tool.ruff.lint.per-file-ignores]
+"testing/**" = ["S101"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+include = '\.pyi?$'
+extend-exclude = '''
+(
+  /(\.venv|venv|node_modules|frontend|logs)/
+)
+'''
+
+[tool.mypy]
+python_version = "3.11"
+mypy_path = ["backend", "ml", "validation", "utils"]
+ignore_missing_imports = true
+disallow_untyped_defs = false
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+exclude = [
+    "^\\.venv/",
+    "^venv/",
+    "^frontend/",
+    "^logs/",
+]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["testing"]
+python_files = ["test_*.py", "*_test.py"]
+asyncio_mode = "auto"
+addopts = "-ra --strict-markers"
+
+
+[tool.hatch.build.targets.wheel]
+packages = ["backend"]

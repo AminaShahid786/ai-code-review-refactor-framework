@@ -1,0 +1,51 @@
+# Pre-commit hook configuration — Phase 2 (Development Environment & Tooling)
+#
+# Install once per clone with:
+#   pre-commit install
+#
+# Run manually against the whole repo with:
+#   pre-commit run --all-files
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
+
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0
+    hooks:
+      - id: mypy
+        additional_dependencies: []
+        exclude: ^(frontend/|logs/)
+
+# Notes:
+# - Ruff's own formatter hook (`ruff-format`) and Black are both included
+#   deliberately per the roadmap's explicit tool list for this phase
+#   (Ruff, Black, Mypy). If a future phase decides to standardize on a single
+#   formatter, this file should be updated then — not before.
+# - Bandit, Pylint, and Radon are NOT included here: those are Static
+#   Analysis Agent *application* tools (Phase 10), not developer pre-commit
+#   hooks, and are intentionally out of scope for Phase 2.
