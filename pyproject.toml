@@ -1,0 +1,21 @@
+[project]
+name = "ai-code-review-framework"
+version = "0.1.0"
+description = "AI-Driven Code Review and Refactoring Framework for Python — a multi-agent, SLM-based, RAG-augmented code review and refactoring platform."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Amina Shahid" },
+    { name = "Azka Fazal" },
+    { name = "Shafia Zahid" },
+]
+
+# NOTE: This file intentionally declares no dependencies yet.
+# Per the project's Implementation Roadmap, dependency management, tooling
+# configuration (Ruff/Black/Mypy/pytest), and the dev-environment setup are
+# introduced in Phase 2 — Development Environment & Tooling.
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
