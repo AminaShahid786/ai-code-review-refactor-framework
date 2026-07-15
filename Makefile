@@ -12,7 +12,10 @@ PYTHON := python3
 VENV_PY := $(VENV_DIR)/bin/python
 VENV_PIP := $(VENV_DIR)/bin/pip
 
-.PHONY: help setup venv install-dev precommit-install env lint format typecheck test check clean
+COMPOSE := docker compose --env-file .env -f docker/docker-compose.yml
+
+.PHONY: help setup venv install-dev precommit-install env lint format typecheck test check clean \
+        docker-up docker-down docker-ps docker-logs docker-clean
 
 help: ## Show this help message
 	@echo "Available targets:"
@@ -74,3 +77,26 @@ precommit-all: ## Run all pre-commit hooks against every file in the repo
 clean: ## Remove the virtual environment and tool caches
 	rm -rf $(VENV_DIR) .pytest_cache .ruff_cache .mypy_cache
 	find . -type d -name "__pycache__" -not -path "./node_modules/*" -exec rm -rf {} +
+
+# ---- Phase 3: Docker & Container Infrastructure -----------------------------
+# Data-layer only (PostgreSQL, Redis, Qdrant, MinIO). No app containers yet.
+
+docker-up: ## Start the data-layer containers (Postgres, Redis, Qdrant, MinIO)
+	@if [ ! -f ".env" ]; then \
+		echo "No .env found — run 'make env' (or 'make setup') first."; \
+		exit 1; \
+	fi
+	$(COMPOSE) up -d
+
+docker-down: ## Stop the data-layer containers (keeps volume data)
+	$(COMPOSE) down
+
+docker-ps: ## Show status/health of the data-layer containers
+	$(COMPOSE) ps
+
+docker-logs: ## Tail logs from all data-layer containers
+	$(COMPOSE) logs -f
+
+docker-clean: ## Stop containers AND delete their local volume data (destructive)
+	$(COMPOSE) down -v
+	rm -rf docker/volumes

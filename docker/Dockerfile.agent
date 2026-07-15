@@ -1,0 +1,26 @@
+# -----------------------------------------------------------------------------
+# Dockerfile.agent — Phase 3 (Docker & Container Infrastructure)
+#
+# STUB. This will become the base image used to run the Celery agent workers
+# (Code Intake, Preprocessing, Static Analysis, Context Builder, Embedding,
+# Vector DB, Memory, SLM Review, Refactoring, Validation, Explanation,
+# Feedback Learning — see backend/agents/). Agent implementation begins in
+# Phase 7 (Task Queue & Orchestration Framework) and continues through
+# Phase 20.
+#
+# This file exists now, as required by the roadmap's Phase 3 file list, as a
+# placeholder that documents the intended base image and build shape. It is
+# NOT referenced by docker-compose.yml yet and will be completed and wired
+# in once backend/agents/ and backend/orchestrator/ contain real code.
+# -----------------------------------------------------------------------------
+
+FROM python:3.11-slim AS base
+
+WORKDIR /app
+
+# Phase 7+ will add here, in this order:
+#   1. COPY pyproject.toml (and lockfile) + `pip install .`  (dependency layer, cached)
+#   2. COPY backend/ ./backend
+#   3. CMD ["celery", "-A", "backend.orchestrator.celery_app", "worker", "--loglevel=info"]
+
+CMD ["echo", "backend/agents is not implemented yet — see Phase 7 onward of the Implementation Roadmap"]

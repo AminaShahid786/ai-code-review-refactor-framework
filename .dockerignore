@@ -1,0 +1,64 @@
+# -----------------------------------------------------------------------------
+# .dockerignore — Phase 3 (Docker & Container Infrastructure)
+#
+# Applies to any `docker build` run with the repository root as context
+# (e.g. `docker build -f docker/Dockerfile.gateway .`), which is how the
+# gateway/agent images will be built from Phase 4 onward.
+# -----------------------------------------------------------------------------
+
+# Version control
+.git/
+.gitignore
+.gitattributes
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.hypothesis/
+
+# Node / frontend (backend images never need the frontend tree)
+frontend/
+node_modules/
+
+# Docker itself / local volume data
+docker/volumes/
+
+# Environment and secrets — never bake these into an image
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# Logs and local data
+logs/
+*.log
+*.sqlite3
+*.db
+
+# ML artifacts (large binaries — pulled at runtime, not baked into images)
+*.gguf
+*.awq
+*.safetensors
+*.bin
+mlruns/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Docs and non-runtime files not needed inside the image
+docs/
+*.md
+!README.md

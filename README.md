@@ -23,8 +23,56 @@ Science), extended from the original academic proposal into a full production ar
 This repository is under active phased development. See `docs/` (added in a later phase) and
 the project's Implementation Roadmap for the full phase-by-phase build plan.
 
-**Current phase: Phase 2 — Environment & Tooling Setup**
-This phase establishes the framework's development environment and code quality standards. It integrates automated formatting (Black), strict linting (Ruff), static type-checking (Mypy), and Git pre-commit hooks, alongside a standardized testing framework (Pytest) to ensure flawless code health and consistency before any application logic is written.
+**Completed phases:**
+
+| Phase | Name | Status |
+|---|---|---|
+| 1 | Project Initialization & Repository Structure | ✅ Done |
+| 2 | Development Environment & Tooling | ✅ Done |
+| 3 | Docker & Container Infrastructure | ✅ Done |
+
+**Current phase: Phase 3 — Docker & Container Infrastructure.**
+The data layer (PostgreSQL, Redis, Qdrant, MinIO) now runs via Docker Compose. No application
+code, database schema, or agents exist yet — those begin in Phase 4 onward.
+
+## Getting Started
+
+### 1. Clone and bootstrap the dev environment (Phase 2)
+
+```bash
+git clone <this-repo-url>
+cd ai-code-review-framework
+make setup
+source .venv/bin/activate
+```
+
+This creates a Python virtual environment, installs development tooling (Ruff, Black, Mypy,
+pre-commit, pytest), installs the git pre-commit hook, and creates your local `.env` from
+`.env.example`.
+
+### 2. Start the data layer (Phase 3)
+
+```bash
+make docker-up
+make docker-ps
+```
+
+This brings up four containers on an internal Docker network (`ai-review-network`):
+
+| Service | Purpose | Default local port(s) |
+|---|---|---|
+| PostgreSQL | Relational data store | `5432` |
+| Redis | Cache / task queue broker | `6379` |
+| Qdrant | Vector database | `6333` (HTTP), `6334` (gRPC) |
+| MinIO | S3-compatible object storage | `9000` (API), `9001` (console) |
+
+No application services (API gateway, agents, SLM server) are defined yet — those are
+introduced starting in Phase 4. See `docker/docker-compose.yml` for full configuration and
+`docker/Dockerfile.gateway` / `docker/Dockerfile.agent` for the (currently stubbed)
+application image definitions.
+
+Stop the stack with `make docker-down` (data persists) or `make docker-clean` (also deletes
+local volume data — destructive, dev-only).
 
 ## Repository Structure
 
@@ -49,7 +97,8 @@ ai-code-review-framework/
 │   ├── gates/
 │   └── sandbox_runner/
 ├── testing/             # Unit, integration, and end-to-end tests
-├── docker/              # Dockerfiles and docker-compose definitions
+├── docker/              # docker-compose.yml (data layer: Postgres/Redis/Qdrant/MinIO),
+│                        #   Dockerfile.gateway and Dockerfile.agent (stubs — Phase 4+)
 ├── scripts/             # Operational and developer scripts
 ├── configs/             # Environment/service configuration files
 ├── logs/                # Local log output (not committed)
