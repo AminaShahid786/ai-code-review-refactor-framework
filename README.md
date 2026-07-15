@@ -23,9 +23,8 @@ Science), extended from the original academic proposal into a full production ar
 This repository is under active phased development. See `docs/` (added in a later phase) and
 the project's Implementation Roadmap for the full phase-by-phase build plan.
 
-**Current phase: Phase 1 — Project Initialization & Repository Structure.**
-No application logic, dependencies, or Docker services have been implemented yet — this phase
-establishes only the canonical repository layout that every subsequent phase builds on.
+**Current phase: Phase 2 — Environment & Tooling Setup**
+This phase establishes the framework's development environment and code quality standards. It integrates automated formatting (Black), strict linting (Ruff), static type-checking (Mypy), and Git pre-commit hooks, alongside a standardized testing framework (Pytest) to ensure flawless code health and consistency before any application logic is written.
 
 ## Repository Structure
 
