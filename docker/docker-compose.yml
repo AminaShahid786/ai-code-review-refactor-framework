@@ -1,10 +1,12 @@
 # -----------------------------------------------------------------------------
-# docker-compose.yml — Phase 3 (Docker & Container Infrastructure)
+# docker-compose.yml
 #
-# Scope for this phase, exactly per the Implementation Roadmap: stand up the
-# DATA-LAYER containers only — PostgreSQL, Redis, Qdrant, MinIO. No
-# application containers (gateway, agents, SLM server) are defined here yet;
-# those are wired in starting Phase 4 (backend) and Phase 15 (SLM serving).
+# Phase 3 (Docker & Container Infrastructure) stood up the DATA-LAYER
+# containers: PostgreSQL, Redis, Qdrant, MinIO.
+#
+# Phase 4 (Backend Foundation) adds the `gateway` service (FastAPI). No other
+# application containers (agents, SLM server) are defined here yet; those
+# are wired in starting Phase 7 and Phase 15 respectively.
 #
 # Run from the REPOSITORY ROOT (so the .env file and bind-mount paths below
 # resolve correctly):
@@ -101,18 +103,49 @@ services:
       retries: 5
       start_period: 10s
 
+  # --- Phase 4: Backend Foundation -----------------------------------------
+  # The FastAPI API Gateway. At this phase it does not yet connect to any of
+  # the data-layer services above (no DB/queue/vector-store wiring exists
+  # until later phases) — it only needs to share the same Docker network so
+  # that wiring can be added without touching this service definition.
+  gateway:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.gateway
+    container_name: ai-review-gateway
+    restart: unless-stopped
+    environment:
+      APP_NAME: ${APP_NAME:-ai-code-review-framework}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      GATEWAY_HOST: ${GATEWAY_HOST:-0.0.0.0}
+      GATEWAY_PORT: ${GATEWAY_PORT:-8000}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+    ports:
+      - "${GATEWAY_PORT:-8000}:8000"
+    networks:
+      - ai-review-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
 # -----------------------------------------------------------------------------
 # Notes:
-# - All four services use LOCAL BIND MOUNTS under docker/volumes/<service>/ so
-#   data is easy to inspect/reset during development. This directory is
-#   already git-ignored (see .gitignore's `docker/volumes/` entry from
-#   Phase 1) so no state ever gets committed.
+# - All four data-layer services use LOCAL BIND MOUNTS under
+#   docker/volumes/<service>/ so data is easy to inspect/reset during
+#   development. This directory is already git-ignored (see .gitignore's
+#   `docker/volumes/` entry from Phase 1) so no state ever gets committed.
 # - Every credential has a "changeme_dev_only" fallback default ONLY so the
 #   stack still runs if .env is missing; real usage should always supply
-#   values via .env (see .env.example, extended in this phase).
-# - No application container (gateway/agent/SLM) is defined here. That is
-#   intentional per the roadmap's Phase 3 scope — see Dockerfile.gateway and
-#   Dockerfile.agent in this same directory for the (currently stubbed)
-#   application Dockerfiles, which will be wired into this compose file once
-#   there is real application code to build (Phase 4 onward).
+#   values via .env (see .env.example).
+# - The `gateway` service (added in Phase 4) does not yet connect to
+#   postgres/redis/qdrant/minio — there is no database/queue/vector-store
+#   client code yet. It shares the network so that wiring can be added in
+#   later phases without changing this service definition.
+# - `docker/Dockerfile.agent` remains a stub, not yet referenced here — agent
+#   containers are introduced starting Phase 7 (Task Queue & Orchestration
+#   Framework).
 # -----------------------------------------------------------------------------

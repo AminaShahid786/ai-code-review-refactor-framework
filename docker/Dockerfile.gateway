@@ -1,25 +1,50 @@
 # -----------------------------------------------------------------------------
-# Dockerfile.gateway — Phase 3 (Docker & Container Infrastructure)
+# Dockerfile.gateway — Phase 4 (Backend Foundation)
 #
-# STUB. Per the Implementation Roadmap, Phase 3 stands up only the data-layer
-# containers (see docker-compose.yml in this directory: PostgreSQL, Redis,
-# Qdrant, MinIO). The FastAPI gateway application itself does not exist yet
-# — it is built in Phase 4 (Backend Foundation).
+# Builds the FastAPI API Gateway container. Build context is the REPOSITORY
+# ROOT (not this docker/ directory), because the image needs both
+# pyproject.toml and the backend/ package:
 #
-# This file exists now, as required by the roadmap's Phase 3 file list, as a
-# placeholder that documents the intended base image and build shape. It is
-# NOT referenced by docker-compose.yml yet and will be completed and wired
-# in once backend/gateway/ contains real application code.
+#   docker build -f docker/Dockerfile.gateway -t ai-review-gateway .
+#
+# (docker-compose.yml, in this same directory, already sets `context: ..`
+# for you — this is handled automatically by `make docker-up`.)
 # -----------------------------------------------------------------------------
 
 FROM python:3.11-slim AS base
 
 WORKDIR /app
 
-# Phase 4 will add here, in this order:
-#   1. COPY pyproject.toml (and lockfile) + `pip install .`  (dependency layer, cached)
-#   2. COPY backend/ ./backend
-#   3. EXPOSE 8000
-#   4. CMD ["uvicorn", "backend.gateway.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# System dependencies: none required yet at this phase. Kept minimal
+# deliberately — later phases (e.g. Validation Agent's sandboxing, Static
+# Analysis Agent's tool dependencies) will extend this only when they
+# actually need to.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
 
-CMD ["echo", "backend/gateway is not implemented yet — see Phase 4 of the Implementation Roadmap"]
+# --- Dependency layer (cached separately from application code) -------------
+# Only the runtime dependencies this phase actually uses are installed here,
+# pinned to match pyproject.toml's [project.dependencies] exactly.
+RUN pip install --no-cache-dir \
+        fastapi==0.115.5 \
+        "uvicorn[standard]==0.32.0" \
+        pydantic-settings==2.6.1 \
+        python-json-logger==2.0.7
+
+# --- Application code ---------------------------------------------------
+COPY backend/ ./backend
+COPY pyproject.toml ./pyproject.toml
+
+# Run as a non-root user (security baseline established from the first
+# application image, not deferred to the Phase 25 hardening pass).
+RUN useradd --create-home --uid 1000 appuser
+USER appuser
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=10s --timeout=5s --retries=5 --start-period=10s \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+CMD ["uvicorn", "backend.gateway.main:app", "--host", "0.0.0.0", "--port", "8000"]

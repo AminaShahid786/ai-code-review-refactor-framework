@@ -7,6 +7,11 @@ an isolated sandbox, explains its reasoning, and learns from user feedback over 
 The system is built entirely around locally-deployed **Small Language Models (SLMs)** —
 no cloud LLM API is used anywhere in the review or refactoring path.
 
+**Technology stack (per the FYP report's Tools and Technologies table — binding, not a
+default):** Python/FastAPI backend; **plain HTML, CSS, and vanilla JavaScript frontend**
+(no React/Vue/Angular, no build step, no npm dependency). See the architecture document's
+§14 Technology Stack for the full list.
+
 ## Project Origin
 
 This repository implements the Final Year Project **"AI-Driven Code Review and Refactoring
@@ -30,10 +35,13 @@ the project's Implementation Roadmap for the full phase-by-phase build plan.
 | 1 | Project Initialization & Repository Structure | ✅ Done |
 | 2 | Development Environment & Tooling | ✅ Done |
 | 3 | Docker & Container Infrastructure | ✅ Done |
+| 4 | Backend Foundation (FastAPI) | ✅ Done |
 
-**Current phase: Phase 3 — Docker & Container Infrastructure.**
-The data layer (PostgreSQL, Redis, Qdrant, MinIO) now runs via Docker Compose. No application
-code, database schema, or agents exist yet — those begin in Phase 4 onward.
+**Current phase: Phase 4 — Backend Foundation.**
+A running FastAPI gateway now exists (`backend/gateway/`), serving a single `/health`
+endpoint, with structured JSON logging, CORS, and centralized exception handling. It does not
+yet connect to any database, cache, or vector store, and has no business routes, auth, or
+agents — those begin in Phase 5 onward.
 
 ## Getting Started
 
@@ -66,28 +74,49 @@ This brings up four containers on an internal Docker network (`ai-review-network
 | Qdrant | Vector database | `6333` (HTTP), `6334` (gRPC) |
 | MinIO | S3-compatible object storage | `9000` (API), `9001` (console) |
 
-No application services (API gateway, agents, SLM server) are defined yet — those are
-introduced starting in Phase 4. See `docker/docker-compose.yml` for full configuration and
-`docker/Dockerfile.gateway` / `docker/Dockerfile.agent` for the (currently stubbed)
-application image definitions.
+No agent or SLM-server containers are defined yet — those are introduced starting Phase 7 and
+Phase 15 respectively. See `docker/docker-compose.yml` for full configuration and
+`docker/Dockerfile.agent` for the (currently stubbed) agent worker image definition.
 
 Stop the stack with `make docker-down` (data persists) or `make docker-clean` (also deletes
 local volume data — destructive, dev-only).
+
+### 3. Start the API Gateway (Phase 4)
+
+The gateway is now part of the same Docker Compose stack:
+
+```bash
+make docker-up
+curl http://localhost:8000/health
+# → {"status":"ok","app_name":"ai-code-review-framework","environment":"development"}
+```
+
+Or run it directly on the host (without Docker) for faster iteration during development:
+
+```bash
+source .venv/bin/activate
+pip install -e "."          # installs FastAPI/Uvicorn/Pydantic Settings/python-json-logger
+uvicorn backend.gateway.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Interactive API docs are available at `http://localhost:8000/docs` while `ENVIRONMENT` is not
+`production`. No business routes exist yet — only `/health` and the auto-generated `/docs`.
 
 ## Repository Structure
 
 ```
 ai-code-review-framework/
 ├── backend/            # FastAPI application: gateway, orchestrator, 12 specialized agents
-│   ├── gateway/         # API entrypoint, config, auth
-│   ├── orchestrator/    # Agent dispatch / task-queue orchestration
+│   ├── gateway/         # main.py (app factory + /health), config.py, logging.py
+│   ├── orchestrator/    # Agent dispatch / task-queue orchestration (Phase 7+)
 │   ├── agents/           # One package per agent (intake, preprocessing, static_analysis,
 │   │                     #   context_builder, embedding, vector_db, memory, slm_review,
-│   │                     #   refactoring, validation, explanation, feedback_learning)
-│   ├── models/           # SQLAlchemy ORM models
-│   ├── schemas/          # Pydantic request/response schemas
-│   └── api/              # REST route definitions
-├── frontend/            # React frontend application
+│   │                     #   refactoring, validation, explanation, feedback_learning) — Phase 8+
+│   ├── models/           # SQLAlchemy ORM models (Phase 5+)
+│   ├── schemas/          # Pydantic request/response schemas (Phase 5+)
+│   └── api/              # REST route definitions (empty until Phase 6+)
+├── frontend/            # Plain HTML/CSS/vanilla JavaScript — no framework, no build step
+│                        #   (pages/, css/, js/ — populated starting Phase 22)
 ├── ml/                  # Model-serving, embeddings, prompts, and distillation pipeline
 │   ├── distillation/     # Teacher-generation, supervised fine-tuning, LoRA/QLoRA
 │   ├── embeddings/       # Embedding model wrappers
@@ -97,8 +126,8 @@ ai-code-review-framework/
 │   ├── gates/
 │   └── sandbox_runner/
 ├── testing/             # Unit, integration, and end-to-end tests
-├── docker/              # docker-compose.yml (data layer: Postgres/Redis/Qdrant/MinIO),
-│                        #   Dockerfile.gateway and Dockerfile.agent (stubs — Phase 4+)
+├── docker/              # docker-compose.yml (data layer + gateway service),
+│                        #   Dockerfile.gateway (real, Phase 4), Dockerfile.agent (stub, Phase 7+)
 ├── scripts/             # Operational and developer scripts
 ├── configs/             # Environment/service configuration files
 ├── logs/                # Local log output (not committed)
